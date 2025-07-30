@@ -3,6 +3,7 @@
 echo "📁 Creating directory structure..."
 sudo mkdir -p /home/desktop/workspace/acme-db/sql
 sudo mkdir -p /home/desktop/workspace/acme-db/scripts
+sudo chown -R student:student /home/desktop
 
 echo "📝 Creating dummy SQL file..."
 sudo tee /home/desktop/workspace/acme-db/sql/acmeData.sql > /dev/null <<EOF
@@ -33,11 +34,21 @@ sudo touch /home/desktop/workspace/acme-db/Containerfile.acme-db
 sudo touch /home/desktop/workspace/acme-db/Containerfile.acme-db-exporter
 
 echo "📦 Starting local registry as 'acmeregistry'..."
-podman run -d --name acmeregistry -p 5000:5000 --restart=always registry:2 2>/dev/null
+podman run -d --name acmeregistry -p 5000:5000 --restart=always quay.io/ysachin/ex188/registry:2 2>/dev/null
 
 echo "🔧 Adding registry name to /etc/hosts..."
 if ! grep -q "acmeregistry" /etc/hosts; then
   echo "127.0.0.1 acmeregistry" | sudo tee -a /etc/hosts
 fi
 
+echo "🛠️  Configuring /etc/containers/registries.conf..."
+sudo tee /etc/containers/registries.conf > /dev/null <<EOF
+unqualified-search-registries = ["acmeregistry:5000", "registry.access.redhat.com", "registry.redhat.io", "docker.io"]
+
+[[registry]]
+location = "acmeregistry:5000"
+insecure = true
+EOF
+
 echo "✅ Environment for Q4 is ready."
+
