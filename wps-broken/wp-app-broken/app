@@ -10,6 +10,7 @@ ENV WORDPRESS_DB_HOST=wp-backend-broken \
 RUN apt-get update \
  && apt-get install -y default-mysql-client netcat-traditional \
  && rm -rf /var/lib/apt/lists/*
+COPY index.php /var/www/html/index.php
 WORKDIR /
 # Copy in our “wait for DB” script
 COPY wait-db.sh /wait-db.sh
