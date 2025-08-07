@@ -1,0 +1,12 @@
+FROM docker.io/library/wordpress:6.5.2-php8.2-apache
+
+# ❌ Wrong DB ENV to simulate broken config
+ENV WORDPRESS_DB_HOST=wp-backend-broken  
+ENV WORDPRESS_DB_NAME=wrongdb             
+ENV WORDPRESS_DB_USER=wronguser           
+ENV WORDPRESS_DB_PASSWORD=wrongpass       
+
+COPY index.php /var/www/html/index.php
+
+EXPOSE 80
+CMD ["apache2-foreground"]
