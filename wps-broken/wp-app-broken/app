@@ -8,7 +8,7 @@ ENV WORDPRESS_DB_HOST=wp-backend-broken \
 
 # Install MySQL client so wait-for-db.sh can use mysqladmin
 RUN apt-get update \
- && apt-get install -y default-mysql-client \
+ && apt-get install -y default-mysql-client netcat-traditional \
  && rm -rf /var/lib/apt/lists/*
 WORKDIR /
 # Copy in our “wait for DB” script

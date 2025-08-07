@@ -1,30 +1,44 @@
 #!/bin/sh
 set -e
 
-echo "⏳ Waiting for database at $WORDPRESS_DB_HOST..."
+DB_HOST=${WORDPRESS_DB_HOST:-localhost}
+DB_PORT=3306
 
-# Test: Can resolve host?
-if ! getent hosts "$WORDPRESS_DB_HOST" >/dev/null; then
-  echo "❌ ERROR: Cannot resolve host '$WORDPRESS_DB_HOST'"
-  exit 1
+echo "⏳ Waiting for MySQL to be available at $DB_HOST:$DB_PORT..."
+for i in $(seq 1 20); do
+    if nc -z "$DB_HOST" "$DB_PORT"; then
+        echo "✅ MySQL is reachable!"
+        break
+    fi
+    echo "⏳ Attempt $i: MySQL not reachable yet..."
+    sleep 2
+done
+
+if ! nc -z "$DB_HOST" "$DB_PORT"; then
+    echo "❌ Failed to connect to MySQL at $DB_HOST:$DB_PORT after 20 tries."
+    exit 1
 fi
 
-# Test: Can connect to host:port?
-if ! nc -z -v -w5 "$WORDPRESS_DB_HOST" 3306 2>&1; then
-  echo "❌ ERROR: Cannot connect to '$WORDPRESS_DB_HOST:3306'. DB might be down or unreachable."
-  exit 1
+echo "🔐 Verifying MySQL credentials..."
+if ! mysql -h "$DB_HOST" -u"$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" -e ";" 2>/tmp/mysql_error; then
+    echo "❌ Cannot reach database."
+    ERROR=$(cat /tmp/mysql_error)
+    if echo "$ERROR" | grep -q "Access denied"; then
+        echo "🛑 Reason: Invalid username or password"
+    elif echo "$ERROR" | grep -q "Unknown MySQL server host"; then
+        echo "🛑 Reason: Host not found"
+    else
+        echo "🛑 Reason: $ERROR"
+    fi
+    exit 1
 fi
 
-# Test: Can authenticate?
-if ! mysqladmin ping \
-     -h "$WORDPRESS_DB_HOST" \
-     -u "$WORDPRESS_DB_USER" \
-     -p"$WORDPRESS_DB_PASSWORD" \
-     --silent; then
-  echo "❌ ERROR: Connected, but authentication failed. Check WORDPRESS_DB_USER or WORDPRESS_DB_PASSWORD."
-  exit 1
+echo "✅ Database credentials are valid."
+
+# 🧠 Fallback to apache2-foreground if no CMD passed
+if [ "$#" -eq 0 ]; then
+    set -- apache2-foreground
 fi
 
-echo "✅ Database is up – launching Apache."
 exec "$@"
 
