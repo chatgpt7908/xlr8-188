@@ -18,7 +18,7 @@ podman run -d --name mysql-wp \
   -e MYSQL_PASSWORD=wppass \
   -p 3308:3306 \
   -v mysql_data:/var/lib/mysql \
-  docker.io/library/mysql:5.7
+   quay.io/ysachin/ex188/acme:wp-backend-broken
  
 # WordPress App (INTENTIONAL: Wrong DB host & password)
 podman run -d --name wordpress-app \
@@ -26,10 +26,10 @@ podman run -d --name wordpress-app \
   -e WORDPRESS_DB_HOST=mysql-db:3306 \
   -e WORDPRESS_DB_USER=wpuser \
   -e WORDPRESS_DB_PASSWORD=wrongpass \
-  -e WORDPRESS_DB_NAME=wpdb \
+  -e WORDPRESS_DB_NAME=wpdb \ 
   -p 8081:80 \
   -v wp_data:/var/www/html \
-  docker.io/library/wordpress:php7.4-apache
+   quay.io/ysachin/ex188/acme:wp-app-broken 
  
 # NGINX Frontend (INTENTIONAL: Wrong proxy_pass host & bad conf)
 cat <<'EOF' > nginx.conf
@@ -56,4 +56,5 @@ podman run -d --name nginx-frontend \
   -v wp_data:/usr/share/nginx/html \
   -v ./nginx.conf:/etc/nginx/nginx.conf:Z \
   -p 8080:80 \
-  docker.io/library/nginx:alpine
+  quay.io/ysachin/ex188/acme:wp-frontend-broken
+  
